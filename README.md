@@ -94,3 +94,7 @@ npm test
 
 - [모바일에서 쓰기](docs/mobile.md) — 안드로이드 크로미엄 계열 브라우저에 설치하는 법
 - [넷플릭스 자막 트랙 확인](docs/netflix-track-check.txt) — 자막이 안 잡힐 때 콘솔에서 직접 확인하는 스니펫
+
+## 라이선스
+
+MIT

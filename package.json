@@ -9,5 +9,6 @@
   },
   "devDependencies": {
     "@xmldom/xmldom": "^0.8.10"
-  }
+  },
+  "license": "MIT"
 }
