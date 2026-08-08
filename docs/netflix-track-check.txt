@@ -1,0 +1,4 @@
+넷플릭스 재생 화면에서 F12 → Console 탭에 아래 한 줄을 붙여넣고 Enter.
+(붙여넣기가 막히면 콘솔에 allow pasting 이라고 먼저 입력하고 Enter)
+
+(()=>{const seen=new Set();const q=[[window.netflix,0]];let n=0,found=null;while(q.length&&!found){const[o,d]=q.shift();if(!o||typeof o!=='object'||d>8||seen.has(o)||++n>20000)continue;seen.add(o);if(Array.isArray(o.timedtexttracks)&&o.timedtexttracks.length){found=o.timedtexttracks;break}let k;try{k=Object.keys(o)}catch(e){continue}for(const x of k){let v;try{v=o[x]}catch(e){continue}if(v&&typeof v==='object')q.push([v,d+1])}}if(!found){console.log('%c결과: 자막 목록 못 찾음 (스캔 '+n+'개)','color:red;font-size:16px');console.log('netflix 전역 존재?',!!window.netflix);return}console.log('%c결과: 자막 트랙 '+found.length+'개 발견!','color:green;font-size:16px');console.table(found.map(t=>({언어:t.language,이름:t.languageDescription,종류:t.rawTrackType,포맷:Object.keys(t.ttDownloadables||{}).join(', ')||'없음'})));})()

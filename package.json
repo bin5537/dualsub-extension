@@ -1,0 +1,13 @@
+{
+  "name": "dualsub-extension",
+  "version": "0.8.0",
+  "private": true,
+  "description": "넷플릭스·디즈니+·티빙에 등록된 자막을 두 언어로 동시에 표시하는 크롬 확장",
+  "scripts": {
+    "test": "node test/test-parser.js && node test/test-hook.js",
+    "icons": "node tools/make-icons.js"
+  },
+  "devDependencies": {
+    "@xmldom/xmldom": "^0.8.10"
+  }
+}

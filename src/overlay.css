@@ -1,0 +1,41 @@
+#dualsub-overlay {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2147483600;
+  pointer-events: none;
+  max-width: 92%;
+  text-align: center;
+  user-select: none;
+}
+
+#dualsub-overlay .dualsub-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+#dualsub-overlay .dualsub-line {
+  display: inline-block;
+  padding: 2px 12px;
+  border-radius: 4px;
+  white-space: pre-wrap;
+  font-family: "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+  line-height: 1.35;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.65);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+#dualsub-overlay .dualsub-toast {
+  display: inline-block;
+  margin-bottom: 6px;
+  padding: 5px 13px;
+  border-radius: 16px;
+  background: rgba(20, 20, 22, 0.88);
+  color: #ffd97d;
+  font-family: "Noto Sans KR", "Malgun Gothic", Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.3;
+}
