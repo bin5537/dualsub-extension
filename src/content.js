@@ -311,28 +311,42 @@
     return s;
   }
 
+  /* 섀도 루트 탐색은 문서 전체를 걷는 일이라 매 프레임 돌릴 수 없다.
+     쓸 만한 영상을 못 찾았을 때만, 그것도 2초에 한 번만 훑는다. */
+  let deepCache = [];
+  let deepAt = 0;
+
   function findVideo() {
-    let videos = Array.from(document.querySelectorAll('video'));
-    videoProbe.shallow = videos.length;
+    const shallow = Array.from(document.querySelectorAll('video'));
+    videoProbe.shallow = shallow.length;
     videoProbe.frames = window.frames.length;
-    if (!videos.length) {
-      const deep = [];
-      try {
-        collectVideos(document, deep, 0);
-      } catch (e) {
-        /* 문서가 바뀌는 중이면 던질 수 있다. 다음 렌더에서 다시 찾는다. */
+
+    let pool = shallow.filter(isPlayerVideo);
+    if (!pool.length) {
+      /* 얕은 검색에 껍데기만 잡혀도 깊이 봐야 한다. 앞서는 얕은 검색이
+         완전히 빈손일 때만 훑어서, 껍데기가 하나라도 있으면 진짜 플레이어를
+         영영 못 찾았다. */
+      const now = Date.now();
+      if (now - deepAt > 2000) {
+        deepAt = now;
+        const deep = [];
+        try {
+          collectVideos(document, deep, 0);
+        } catch (e) {
+          /* 문서가 바뀌는 중이면 던질 수 있다. 다음 기회에 다시 본다. */
+        }
+        deepCache = deep;
       }
-      videos = deep;
-      videoProbe.deep = deep.length;
-      try {
-        videoProbe.media = document.querySelectorAll('video,audio').length;
-      } catch (e) {
-        videoProbe.media = 0;
+      videoProbe.deep = deepCache.length;
+      pool = deepCache.filter(isPlayerVideo);
+      if (!pool.length) {
+        const all = shallow.concat(deepCache.filter((v) => shallow.indexOf(v) < 0));
+        const visible = all.filter(isRealPlayer);
+        pool = visible.length ? visible : all;
       }
     }
-    if (!videos.length) return null;
-    const real = videos.filter(isRealPlayer);
-    const pool = real.length ? real : videos;
+    if (!pool.length) return null;
+
     let best = pool[0];
     let bestScore = videoScore(best);
     for (let i = 1; i < pool.length; i += 1) {
@@ -343,13 +357,18 @@
   }
 
 
+
   function render() {
     if (!settings.enabled) {
       if (overlay) overlay.style.display = 'none';
       return;
     }
     const video = findVideo();
-    if (video && !isPlayerVideo(video)) {
+    /* 본편이 아니면 그리지 않는다 — 껍데기에 그리면 진짜 플레이어 위에
+       엉뚱한 문장이 겹친다.
+       다만 이 프레임에 본편이 없더라도 다른 프레임이 그리고 있을 뿐이므로,
+       "아무 데서도 안 뜬다" 가 되지 않게 재생 중인 영상은 예외로 둔다. */
+    if (video && !isPlayerVideo(video) && video.paused) {
       if (overlay) overlay.style.display = 'none';
       return;
     }
@@ -643,6 +662,7 @@
             cand: Array.from(document.querySelectorAll('video'))
               .map((x) => Math.round(playableLength(x)) + 's')
               .join('/'),
+            deep: deepCache.length,
             w: Math.round(v.getBoundingClientRect().width),
             h: Math.round(v.getBoundingClientRect().height),
             now: v.currentTime,
