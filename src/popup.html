@@ -74,17 +74,18 @@
         overflow-x: hidden;
       }
 
+      /* #status 는 이제 .head 안에 있다. 옛 헤더 시절 좌우 여백이 남아 있어
+         제목보다 18px 밀려 있었다. 여백은 .head 가 갖는다. */
       #status {
-        margin: 0 18px 2px;
-        font-size: 13px;
+        font-size: 12px;
         color: var(--secondary);
         line-height: 1.35;
       }
       #diagLine {
-        margin: 0 18px 10px;
         font-size: 10.5px;
         color: var(--tertiary);
-        line-height: 1.35;
+        line-height: 1.4;
+        text-align: left;
       }
 
       /* ── 한 판 ──────────────────────────────────────────────────────────

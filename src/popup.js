@@ -223,6 +223,7 @@ function renderState(state) {
   const timingText = tm
     ? ' · 재생 ' + tm.now.toFixed(1) + 's' +
       (tm.seekStart ? '(시작 ' + tm.seekStart.toFixed(1) + 's)' : '') +
+      ' · ' + (tm.top ? '최상위' : 'iframe') + ' ' + tm.w + '×' + tm.h +
       ' · 자막 ' + tm.cueCount + '개' +
       (tm.first !== null ? ' [' + tm.first.toFixed(1) + '~' + tm.last.toFixed(0) + 's]' : '') +
       (tm.curStart !== null ? ' · 현재큐 ' + tm.curStart.toFixed(1) + 's' : ' · 현재큐 없음')

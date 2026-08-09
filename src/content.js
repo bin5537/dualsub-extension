@@ -256,6 +256,14 @@
      섀도 DOM 인지 iframe 인지 아직 안 붙은 것인지 구분할 수 없다. */
   const videoProbe = { shallow: 0, deep: 0, frames: 0, media: 0 };
 
+  /* 화면에 실제로 보이는 크기인지. 숨은 미리보기·배경 영상에까지 자막을 그리면
+     프레임마다 오버레이가 하나씩 생겨 서로 다른 문장이 겹쳐 보인다. */
+  function isRealPlayer(v) {
+    if (!v) return false;
+    const r = v.getBoundingClientRect();
+    return r.width >= 240 && r.height >= 135;
+  }
+
   function findVideo() {
     let videos = Array.from(document.querySelectorAll('video'));
     videoProbe.shallow = videos.length;
@@ -277,9 +285,17 @@
       }
     }
     if (!videos.length) return null;
-    const playing = videos.find((v) => !v.paused && v.duration > 60);
+    const real = videos.filter(isRealPlayer);
+    const pool = real.length ? real : videos;
+    const playing = pool.find((v) => !v.paused && v.duration > 60);
     if (playing) return playing;
-    return videos.sort((a, b) => (b.duration || 0) - (a.duration || 0))[0];
+    /* 큰 것을 고른다. 길이가 아니라 화면에서 차지하는 넓이가 기준이다 —
+       길이는 아직 안 읽혔을 수 있지만 크기는 지금 보이는 그대로다. */
+    return pool.sort((a, b) => {
+      const ra = a.getBoundingClientRect();
+      const rb = b.getBoundingClientRect();
+      return rb.width * rb.height - ra.width * ra.height;
+    })[0];
   }
 
   function render() {
@@ -288,6 +304,12 @@
       return;
     }
     const video = findVideo();
+    /* 보이지 않는 영상에는 그리지 않는다. 그리면 그 프레임에도 오버레이가 생겨
+       진짜 플레이어의 자막 위에 다른 문장이 겹친다. */
+    if (video && !isRealPlayer(video)) {
+      if (overlay) overlay.style.display = 'none';
+      return;
+    }
     if (video !== currentVideo) {
       currentVideo = video;
       if (overlay) attachOverlay();
@@ -574,6 +596,9 @@
             if (v.seekable && v.seekable.length) seek0 = v.seekable.start(0);
           } catch (e) { seek0 = 0; }
           return {
+            top: window.top === window,
+            w: Math.round(v.getBoundingClientRect().width),
+            h: Math.round(v.getBoundingClientRect().height),
             now: v.currentTime,
             seekStart: seek0,
             cueCount: cues.length,
