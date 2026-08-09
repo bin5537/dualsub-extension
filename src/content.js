@@ -557,6 +557,31 @@
         maxLines: MAX_LINES,
         hasVideo: !!findVideo(),
         videoProbe: videoProbe,
+        /* 싱크가 어긋날 때 얼마나 어긋나는지 눈으로 재려면 재생 위치와
+           지금 올린 큐의 시각이 같이 보여야 한다. */
+        timing: (function () {
+          const v = findVideo();
+          if (!v) return null;
+          const t0 = v.currentTime * 1000 - settings.offsetMs;
+          const url = state.selected[0];
+          const cues = (url && state.cuesByUrl[url]) || [];
+          let cur = null;
+          for (let i = 0; i < cues.length; i += 1) {
+            if (cues[i].start <= t0 && t0 <= cues[i].end) { cur = cues[i]; break; }
+          }
+          let seek0 = 0;
+          try {
+            if (v.seekable && v.seekable.length) seek0 = v.seekable.start(0);
+          } catch (e) { seek0 = 0; }
+          return {
+            now: v.currentTime,
+            seekStart: seek0,
+            cueCount: cues.length,
+            first: cues.length ? cues[0].start / 1000 : null,
+            last: cues.length ? cues[cues.length - 1].end / 1000 : null,
+            curStart: cur ? cur.start / 1000 : null
+          };
+        })(),
         hookReady: state.hookReady,
         inspected: state.inspected,
         workerMessages: state.workerMessages,

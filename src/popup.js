@@ -219,8 +219,16 @@ function renderState(state) {
     ? '영상 감지됨'
     : '영상 없음 (문서 ' + (vp.shallow || 0) + ' · 섀도 ' + (vp.deep || 0) +
       ' · 미디어 ' + (vp.media || 0) + ' · 하위프레임 ' + (vp.frames || 0) + ')';
+  const tm = state.timing;
+  const timingText = tm
+    ? ' · 재생 ' + tm.now.toFixed(1) + 's' +
+      (tm.seekStart ? '(시작 ' + tm.seekStart.toFixed(1) + 's)' : '') +
+      ' · 자막 ' + tm.cueCount + '개' +
+      (tm.first !== null ? ' [' + tm.first.toFixed(1) + '~' + tm.last.toFixed(0) + 's]' : '') +
+      (tm.curStart !== null ? ' · 현재큐 ' + tm.curStart.toFixed(1) + 's' : ' · 현재큐 없음')
+    : '';
   $('diagLine').textContent = state.hookReady
-    ? (state.host || '') + ' · 응답 ' + (state.inspected || 0) + '건 · ' + videoText
+    ? (state.host || '') + ' · 응답 ' + (state.inspected || 0) + '건 · ' + videoText + timingText
     : '⚠ 후킹 미적용 — 아래 버튼을 누르거나 Ctrl+R 하세요';
   $('injectBtn').style.display = state.hookReady ? 'none' : '';
   fillControls();
