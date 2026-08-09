@@ -44,6 +44,7 @@
     letterSpacing: 0,
     lineGap: 4,
     offsetMs: 0,
+    speed: 1,
     bottomPercent: 18,
     preferredLanguage: 'en',
     theme: 'auto',
@@ -102,6 +103,7 @@
     // 켬/끔으로 저장된 옛 값을 단계 값으로 옮긴다.
     if (saved.fontWeight === undefined) settings.fontWeight = saved.bold ? 700 : 400;
     applyStyle();
+    applySpeed();
   });
 
   function saveSettings() {
@@ -206,6 +208,35 @@
     }, 2600);
   }
 
+  /* ---------- 배속 ----------
+   * 디즈니+ 처럼 배속 버튼이 없는 플레이어를 위해 video.playbackRate 를 직접 건다.
+   * 플레이어가 트랙을 바꾸거나 광고를 끼울 때 1 로 되돌리는 경우가 있어
+   * ratechange 를 듣고 우리 값과 다르면 다시 건다. */
+
+  let speedGuard = false;
+
+  function applySpeed(video) {
+    const v = video || findVideo();
+    if (!v) return;
+    const want = Math.min(4, Math.max(0.25, Number(settings.speed) || 1));
+    if (Math.abs(v.playbackRate - want) < 0.001) return;
+    speedGuard = true;
+    try {
+      v.playbackRate = want;
+    } catch (e) {
+      /* 일부 플레이어는 재생 준비 전 setter 에서 던진다. 다음 렌더에서 다시 시도한다. */
+    }
+    speedGuard = false;
+  }
+
+  function watchSpeed(video) {
+    if (!video || video.__dualsubSpeed) return;
+    video.__dualsubSpeed = true;
+    video.addEventListener('ratechange', () => {
+      if (!speedGuard) applySpeed(video);
+    });
+  }
+
   /* ---------- 영상 찾기 · 렌더 ---------- */
 
   function findVideo() {
@@ -225,7 +256,9 @@
     if (video !== currentVideo) {
       currentVideo = video;
       if (overlay) attachOverlay();
+      watchSpeed(video);
     }
+    applySpeed(video);
     if (!video || !state.selected.length) {
       if (stack && stack.children.length) {
         stack.textContent = '';
@@ -519,6 +552,7 @@
       Object.assign(settings, msg.settings);
       saveSettings();
       applyStyle();
+      applySpeed();
       lastSignature = '';
       sendResponse({ ok: true });
       return false;
@@ -570,6 +604,10 @@
       } else if (e.key === 'ArrowDown') {
         settings.fontSize = Math.max(10, settings.fontSize - 2);
         settings.fontSize2 = Math.max(10, settings.fontSize2 - 2);
+      } else if (e.key === '<' || e.key === ',') {
+        settings.speed = Math.max(0.25, Math.round((settings.speed - 0.25) * 100) / 100);
+      } else if (e.key === '>' || e.key === '.') {
+        settings.speed = Math.min(4, Math.round((settings.speed + 0.25) * 100) / 100);
       } else return;
 
       e.preventDefault();
@@ -579,6 +617,9 @@
       lastSignature = '';
       if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
         toast('싱크 ' + (settings.offsetMs / 1000).toFixed(1) + '초');
+      } else if (/[<>,.]/.test(e.key)) {
+        applySpeed();
+        toast('배속 ' + settings.speed + '배');
       }
     },
     true

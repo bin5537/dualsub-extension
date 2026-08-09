@@ -58,7 +58,7 @@
         width: 344px;
         min-height: 360px;
         margin: 0;
-        padding: 0 0 12px;
+        padding: 0 0 10px;
         background: var(--bg);
         color: var(--label);
         font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
@@ -70,7 +70,7 @@
       }
 
       header {
-        padding: 14px 18px 6px;
+        padding: 12px 18px 5px;
       }
       .brand {
         display: flex;
@@ -102,7 +102,7 @@
         line-height: 1.35;
       }
       #diagLine {
-        margin-top: 2px;
+        margin-top: 1px;
         font-size: 10.5px;
         color: var(--tertiary);
         line-height: 1.35;
@@ -110,7 +110,7 @@
 
       /* 크롬 팝업은 600px 을 넘으면 잘린다. 이 간격이 그 안에 맞춘 값이다. */
       .group {
-        margin: 0 14px 12px;
+        margin: 0 14px 11px;
       }
       .group-title {
         padding: 0 4px 5px;
@@ -129,8 +129,10 @@
         display: flex;
         align-items: center;
         gap: 9px;
-        min-height: 38px;
-        padding: 5px 13px;
+        /* 크롬 팝업 600px 안에 아홉 줄이 들어가야 한다. iOS 최소 터치 높이는
+           44pt 지만 여기는 마우스로 쓰는 팝업이라 36 으로 둔다. */
+        min-height: 36px;
+        padding: 4px 13px;
       }
       .row + .row::before,
       .list-item + .list-item::before {
@@ -530,6 +532,20 @@
     </button>
 
     <div class="group">
+      <div class="group-title">영상</div>
+      <div class="card">
+        <!-- 디즈니+ 처럼 배속 버튼이 없는 플레이어를 위해 video.playbackRate 를 직접 건다. -->
+        <div class="row">
+          <span class="name fixed">배속</span>
+          <button class="btn grow" id="speedDown">느리게</button>
+          <span class="val" id="speedValue">1.0배</span>
+          <button class="btn grow" id="speedUp">빠르게</button>
+          <button class="btn" id="speedReset" title="1배로">↺</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="group">
       <div class="group-title">자막</div>
       <div class="card">
         <div class="row">
@@ -556,11 +572,10 @@
           <button class="btn grow" id="syncPlus">+0.5초</button>
           <button class="btn" id="syncReset">↺</button>
         </div>
-      </div>
+</div>
     </div>
 
     <div class="group">
-      <div class="group-title">미리보기</div>
       <div class="card">
         <div id="preview">
           <div id="previewWrap">
@@ -587,7 +602,6 @@
     </div>
 
     <div class="group">
-      <div class="group-title">자막 파일</div>
       <div class="card">
         <label class="filepick">
           파일에서 불러오기 (.srt / .vtt)
@@ -608,7 +622,7 @@
     </details>
 
     <div class="footnote">
-      Shift+←/→ 싱크 · Shift+↑/↓ 크기 · Alt+드래그 위치 이동
+      Shift+←/→ 싱크 · Shift+↑/↓ 크기 · Shift+,/. 배속 · Alt+드래그 위치
     </div>
 
     <!-- 모양 묶음 보관함. 시트를 열면 이 안의 내용이 시트로 옮겨 간다. -->

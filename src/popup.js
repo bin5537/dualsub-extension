@@ -152,6 +152,7 @@ function syncLabels() {
     if (el) el.textContent = format(settings[key]);
   }
   $('offsetValue').textContent = (settings.offsetMs / 1000).toFixed(1) + '초';
+  $('speedValue').textContent = (settings.speed || 1).toFixed(2).replace(/0$/, '') + '배';
   $('fontValue').textContent = FONT_NAMES[settings.fontFamily] || '고딕';
   $('weightValue').textContent = WEIGHT_NAMES[settings.fontWeight] || '보통';
   $('themeValue').textContent = THEME_NAMES[settings.theme || 'auto'];
@@ -550,6 +551,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     pushSettings({ offsetMs: settings.offsetMs + 500 })
   );
   $('syncReset').addEventListener('click', () => pushSettings({ offsetMs: 0 }));
+
+  /* 배속. 0.25 단위로 0.25~4배.
+     정수 배수만 쓰면 1.5 · 1.75 처럼 실제로 자주 쓰는 값에 닿지 못한다. */
+  const stepSpeed = (d) =>
+    pushSettings({
+      speed: Math.min(4, Math.max(0.25,
+        Math.round(((settings.speed || 1) + d) * 100) / 100))
+    });
+  $('speedDown').addEventListener('click', () => stepSpeed(-0.25));
+  $('speedUp').addEventListener('click', () => stepSpeed(0.25));
+  $('speedReset').addEventListener('click', () => pushSettings({ speed: 1 }));
 
   $('file').addEventListener('change', async (e) => {
     const file = e.target.files && e.target.files[0];
