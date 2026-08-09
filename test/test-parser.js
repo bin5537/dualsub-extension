@@ -194,6 +194,19 @@ check('같은 조건이면 큰 쪽', pick([
   { name: '큼', w: 1280, h: 720, duration: 3000, readyState: 4, paused: false }
 ]), '큼');
 
+/* 감추는 곳이 있으면 켜는 곳도 있어야 한다.
+   render() 가 두 갈래에서 오버레이를 감추는데 되돌리는 코드가 없어
+   한 번 감춰지면 자막이 영영 나오지 않았다. */
+{
+  const src = fs.readFileSync(nodePath.join(ROOT, 'src', 'content.js'), 'utf8');
+  const body = src.slice(src.indexOf('function render()'));
+  const end = body.indexOf('\n  }\n');
+  const render = body.slice(0, end);
+  const hides = (render.match(/style\.display = 'none'/g) || []).length;
+  const shows = (render.match(/style\.display = ''/g) || []).length;
+  check('render 안에 감추기가 있으면 켜기도 있다', hides > 0 && shows > 0, true);
+}
+
 console.log(failures === 0 ? '\nALL PASSED' : '\n' + failures + ' FAILURE(S)');
 process.exit(failures ? 1 : 0);
 

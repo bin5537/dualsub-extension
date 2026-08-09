@@ -73,7 +73,7 @@ background.js (SW)        자막 URL 을 대신 받아옴(CORS 회피) → parse
 
 ## 테스트
 
-파서와 후킹 로직은 Node 로 검증한다 (175개 케이스).
+파서와 후킹 로직은 Node 로 검증한다 (178개 케이스).
 
 ```bash
 npm install   # @xmldom/xmldom — 테스트에서 TTML 파싱에만 쓴다
@@ -82,7 +82,7 @@ npm test
 
 | 파일 | 내용 |
 |---|---|
-| `test/test-parser.js` | SRT·VTT·TTML 파싱, 이진 탐색, 중복 병합, 플레이어 선택 (49) |
+| `test/test-parser.js` | SRT·VTT·TTML 파싱, 이진 탐색, 중복 병합, 플레이어 선택 (51) |
 | `test/test-hook.js` | 넷플릭스 매니페스트·HLS·JSON.parse 후킹, 예외 견고성 (126) |
 
 ## 한계

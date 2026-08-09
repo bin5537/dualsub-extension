@@ -444,6 +444,9 @@
     }
     ensureOverlay();
     attachOverlay();
+    /* 위쪽 두 갈래에서 감춰 두었을 수 있다. 다시 그릴 때 반드시 켠다 —
+       켜는 코드가 없어서 한 번 감춰지면 자막이 영영 안 나왔다. */
+    overlay.style.display = '';
 
     const t = presentationTime(video) * 1000 - settings.offsetMs;
     const texts = state.selected.map((url) => {
