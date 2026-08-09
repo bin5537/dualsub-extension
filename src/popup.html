@@ -3,51 +3,55 @@
   <head>
     <meta charset="utf-8" />
     <style>
+      /* 묶음 목록·시트 같은 뼈대는 iOS 설정을 따르되 색은 b1n2da 것을 쓴다.
+         애플 팔레트를 그대로 쓰면 어느 앱에서 떼어 온 화면처럼 보인다. */
       :root {
         color-scheme: light dark;
-        --bg: #f2f2f7;
+        --bg: #f4f5f7;
         --card: #ffffff;
-        --sep: rgba(60, 60, 67, 0.16);
-        --label: #000000;
-        --secondary: rgba(60, 60, 67, 0.6);
-        --tertiary: rgba(60, 60, 67, 0.32);
-        --fill: rgba(120, 120, 128, 0.12);
-        --fill-strong: rgba(120, 120, 128, 0.2);
-        --accent: #007aff;
-        --green: #34c759;
-        --sheet: #f2f2f7;
+        --sep: #e8eaed;
+        --label: #191b1e;
+        --secondary: #6b7178;
+        --tertiary: #979ca3;
+        --fill: #f1f2f4;
+        --fill-strong: #e0e3e7;
+        --accent: #059669;
+        --green: #059669;
+        --sheet: #f4f5f7;
         --thumb: #ffffff;
-        --shadow: 0 1px 2.5px rgba(0, 0, 0, 0.22);
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
       }
       /* 시스템이 어두우면 따라가되, 사용자가 밝게로 고정했으면 무시한다. */
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme="light"]) {
-          --bg: #000000;
-          --card: #1c1c1e;
-          --sep: rgba(84, 84, 88, 0.55);
-          --label: #ffffff;
-          --secondary: rgba(235, 235, 245, 0.6);
-          --tertiary: rgba(235, 235, 245, 0.3);
-          --fill: rgba(118, 118, 128, 0.24);
-          --fill-strong: rgba(118, 118, 128, 0.32);
-          --accent: #0a84ff;
-          --sheet: #1c1c1e;
-          --shadow: 0 1px 2.5px rgba(0, 0, 0, 0.55);
+          --bg: #131418;
+          --card: #191a1f;
+          --sep: #26272d;
+          --label: #ececef;
+          --secondary: #9a9ea8;
+          --tertiary: #6b6f78;
+          --fill: #23242a;
+          --fill-strong: #34363e;
+          --accent: #34d399;
+          --green: #34d399;
+          --sheet: #17181d;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
       }
       /* 어둡게로 고정한 경우 — 시스템 설정과 무관하게 적용된다. */
       :root[data-theme="dark"] {
-        --bg: #000000;
-        --card: #1c1c1e;
-        --sep: rgba(84, 84, 88, 0.55);
-        --label: #ffffff;
-        --secondary: rgba(235, 235, 245, 0.6);
-        --tertiary: rgba(235, 235, 245, 0.3);
-        --fill: rgba(118, 118, 128, 0.24);
-        --fill-strong: rgba(118, 118, 128, 0.32);
-        --accent: #0a84ff;
-        --sheet: #1c1c1e;
-        --shadow: 0 1px 2.5px rgba(0, 0, 0, 0.55);
+        --bg: #131418;
+        --card: #191a1f;
+        --sep: #26272d;
+        --label: #ececef;
+        --secondary: #9a9ea8;
+        --tertiary: #6b6f78;
+        --fill: #23242a;
+        --fill-strong: #34363e;
+        --accent: #34d399;
+          --green: #34d399;
+        --sheet: #17181d;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
       }
 
       * {
@@ -61,9 +65,11 @@
         padding: 0 0 10px;
         background: var(--bg);
         color: var(--label);
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-          "Segoe UI Variable Text", "Segoe UI", "Pretendard",
-          "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
+        /* 확장 페이지는 CSP 때문에 웹폰트를 받아올 수 없다. 설치돼 있으면 쓰고
+           없으면 시스템 글꼴로 내려간다. */
+        font-family: "Pretendard Variable", Pretendard, -apple-system,
+          BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI",
+          "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
         font-size: 14px;
         -webkit-font-smoothing: antialiased;
         overflow-x: hidden;
@@ -96,46 +102,207 @@
         letter-spacing: 0;
       }
       #status {
-        margin-top: 3px;
-        font-size: 12.5px;
+        margin: 0 18px 2px;
+        font-size: 13px;
         color: var(--secondary);
         line-height: 1.35;
       }
       #diagLine {
-        margin-top: 1px;
+        margin: 0 18px 10px;
         font-size: 10.5px;
         color: var(--tertiary);
         line-height: 1.35;
       }
 
-      /* 크롬 팝업은 600px 을 넘으면 잘린다. 이 간격이 그 안에 맞춘 값이다. */
+      /* ── 한 판 ──────────────────────────────────────────────────────────
+         회색 바닥에 카드 넷을 띄우면 "설정 목록" 이 된다. 이건 영상 보다가
+         잠깐 여는 도구라 한 판에 담고 실선으로만 나눈다. */
+      .panel {
+        margin: 10px;
+        border-radius: 16px;
+        background: var(--card);
+        box-shadow: var(--shadow-card);
+        overflow: hidden;
+      }
+
+      /* 결과물이 맨 위에 온다. 이 도구가 만드는 게 이것이다. */
+      #preview {
+        position: relative;
+        padding: 26px 16px;
+        text-align: center;
+        background: #202024
+          repeating-linear-gradient(
+            45deg,
+            rgba(255, 255, 255, 0.045) 0 9px,
+            transparent 9px 18px
+          );
+      }
+      #previewWrap {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+      }
+      #version {
+        position: absolute;
+        left: 12px;
+        bottom: 7px;
+        font-size: 10px;
+        font-weight: 600;
+        color: rgba(255, 255, 255, 0.3);
+      }
+
+      /* 켜져 있나 · 뭐가 뜨고 있나. 팝업을 여는 이유 그 자체라 제일 크게 둔다. */
+      .head {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--sep);
+      }
+      .headText {
+        flex: 1;
+        min-width: 0;
+        border: none;
+        background: none;
+        padding: 0;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+      }
+      .headTitle {
+        display: block;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        color: var(--label);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      .headSub {
+        display: block;
+        margin-top: 1px;
+        font-size: 12px;
+        color: var(--secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      /* 싱크·배속. 같은 일(재생 중 미세 조정)이라 같은 모양으로 둔다. */
+      .stepRow {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--sep);
+      }
+      .stepRow .k {
+        width: 40px;
+        flex: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--label);
+      }
+      .stepRow .v {
+        flex: 1;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--label);
+        font-variant-numeric: tabular-nums;
+      }
+      .nub {
+        flex: none;
+        width: 34px;
+        height: 30px;
+        border: none;
+        border-radius: 9px;
+        background: var(--fill);
+        color: var(--label);
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      .nub:active {
+        opacity: 0.5;
+      }
+      .nub.ghost {
+        background: none;
+        color: var(--tertiary);
+        width: 28px;
+      }
+
+      /* 가끔 쓰는 것. 줄 하나씩 내주면 위쪽과 무게가 같아진다. */
+      .chips {
+        display: flex;
+        gap: 7px;
+        padding: 11px 14px 13px;
+      }
+      .chip {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        min-height: 44px;
+        padding: 6px 4px;
+        border: none;
+        border-radius: 11px;
+        background: var(--fill);
+        color: var(--label);
+        font: inherit;
+        font-size: 12.5px;
+        font-weight: 600;
+        letter-spacing: -0.2px;
+        cursor: pointer;
+        position: relative;
+      }
+      .chip:active {
+        opacity: 0.55;
+      }
+      .chip input[type="file"] {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
+      .chipVal {
+        font-size: 11px;
+        font-weight: 600;
+        color: var(--secondary);
+      }
+
+      /* ── 모양 시트 안의 줄 ──────────────────────────────────────────────
+         본문은 한 판(.panel)으로 바뀌었지만 시트 안은 설정 목록 그대로다.
+         항목이 열여섯 줄이라 이름·값·조작이 줄지어 서는 편이 읽기 쉽다. */
       .group {
-        margin: 0 14px 11px;
+        margin: 0 0 14px;
       }
       .group-title {
-        padding: 0 4px 5px;
-        font-size: 11.5px;
+        padding: 0 2px 6px;
+        font-size: 12px;
         font-weight: 600;
+        letter-spacing: 0.01em;
         color: var(--secondary);
       }
       .card {
         background: var(--card);
-        border-radius: 11px;
+        border-radius: 12px;
         overflow: hidden;
       }
-
       .row {
         position: relative;
         display: flex;
         align-items: center;
-        gap: 9px;
-        /* 크롬 팝업 600px 안에 아홉 줄이 들어가야 한다. iOS 최소 터치 높이는
-           44pt 지만 여기는 마우스로 쓰는 팝업이라 36 으로 둔다. */
-        min-height: 36px;
-        padding: 4px 13px;
+        gap: 10px;
+        min-height: 40px;
+        padding: 6px 13px;
       }
-      .row + .row::before,
-      .list-item + .list-item::before {
+      .row + .row::before {
         content: "";
         position: absolute;
         top: 0;
@@ -147,23 +314,26 @@
       }
       .row .name {
         flex: none;
-        font-size: 13.5px;
+        font-size: 14px;
         letter-spacing: -0.2px;
       }
       .row .name.fixed {
-        width: 52px;
+        width: 56px;
+      }
+      .row .name.muted {
+        color: var(--secondary);
       }
       .row .spacer {
         flex: 1;
       }
       .row .val {
         flex: none;
-        font-size: 12px;
+        font-size: 13px;
         color: var(--secondary);
         font-variant-numeric: tabular-nums;
         text-align: right;
         min-width: 34px;
-        max-width: 168px;
+        max-width: 150px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
@@ -178,10 +348,48 @@
         flex: none;
         width: 6px;
         height: 6px;
-        margin-left: 1px;
         border-right: 1.8px solid var(--tertiary);
         border-bottom: 1.8px solid var(--tertiary);
         transform: rotate(-45deg);
+      }
+
+      /* ── 바닥 ──────────────────────────────────────────────────────────
+         링크 셋과 <details> 를 그냥 흘려 두면 서로 포개진다.
+         details 는 블록이라 인라인 링크와 같은 줄에 설 수 없다. */
+      .foot {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+        padding: 0 16px 12px;
+      }
+      .footRow {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .foot .link {
+        border: none;
+        background: none;
+        padding: 0 10px 0 0;
+        font: inherit;
+        font-size: 12px;
+        color: var(--secondary);
+        cursor: pointer;
+      }
+      .foot .link:hover {
+        color: var(--accent);
+      }
+      .keys {
+        margin-top: 8px;
+        font-size: 10.5px;
+        color: var(--tertiary);
+        line-height: 1.4;
+      }
+      #diagLine {
+        margin-top: 4px;
+        font-size: 10.5px;
+        color: var(--tertiary);
       }
 
       input[type="checkbox"].switch {
@@ -264,7 +472,7 @@
         background: var(--fill);
         color: var(--accent);
         font: inherit;
-        font-size: 12.5px;
+        font-size: 13px;
         font-weight: 500;
         padding: 5px 8px;
         cursor: pointer;
@@ -442,8 +650,10 @@
       #sheetPanel .group:last-child {
         margin-bottom: 0;
       }
-      .name.accent {
-        color: var(--accent);
+      /* 되돌리기는 여는 동작이 아니라 되돌리는 동작이다. 파일 열기·후보 요청과
+         같은 초록을 쓰면 셋이 같은 무게가 되어 무엇이 주된 행동인지 흐려진다. */
+      .name.muted {
+        color: var(--secondary);
       }
 
       .sheet-list {
@@ -518,112 +728,76 @@
     </style>
   </head>
   <body>
-    <header>
-      <div class="brand">
-        <img class="brand-logo" src="../icons/icon128.png" alt="" />
-        <h1>겹자막 <span id="version"></span></h1>
+    <!-- 설정 앱이 아니라 영상 보다가 잠깐 여는 도구다.
+         묶음 넷을 회색 바닥에 띄워 두면 "설정 목록" 으로 읽힌다.
+         한 판에 담고 실선으로만 나눈다. 자주 쓰는 것(켬끔·트랙·싱크·배속)이
+         위쪽 절반을 차지하고, 가끔 쓰는 것은 아래 칩 한 줄로 접는다. -->
+    <div class="panel">
+      <div id="preview">
+        <div id="previewWrap">
+          <div id="previewLine1">Sample subtitle text</div>
+          <div id="previewLine2">두 번째 언어 미리보기</div>
+        </div>
+        <span id="version"></span>
       </div>
-      <div id="status">불러오는 중…</div>
+
+      <!-- 팝업을 여는 이유 그 자체 — 켜져 있나, 뭐가 뜨고 있나. -->
+      <div class="head">
+        <input type="checkbox" id="enabled" class="switch" />
+        <button class="headText" id="trackRow">
+          <span class="headTitle" id="trackValue">없음</span>
+          <span class="headSub" id="status">불러오는 중…</span>
+        </button>
+        <i class="chev"></i>
+      </div>
+
+      <div class="stepRow">
+        <span class="k">싱크</span>
+        <button class="nub" id="syncMinus">−</button>
+        <span class="v" id="offsetValue">0.0초</span>
+        <button class="nub" id="syncPlus">＋</button>
+        <button class="nub ghost" id="syncReset" title="0초로">↺</button>
+      </div>
+
+      <div class="stepRow">
+        <span class="k">배속</span>
+        <button class="nub" id="speedDown">−</button>
+        <span class="v" id="speedValue">1.0배</span>
+        <button class="nub" id="speedUp">＋</button>
+        <button class="nub ghost" id="speedReset" title="1배로">↺</button>
+      </div>
+
+      <!-- 가끔 쓰는 것들. 줄 하나씩 내주면 자주 쓰는 것과 무게가 같아진다. -->
+      <div class="chips">
+        <button class="chip" id="lookRow">글자 모양</button>
+        <button class="chip" id="themeRow">
+          화면 <span class="chipVal" id="themeValue"></span>
+        </button>
+        <label class="chip">
+          자막 파일
+          <input type="file" id="file" accept=".srt,.vtt,.txt,.xml,.ttml,.dfxp" />
+        </label>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div class="footRow">
+        <button class="link" id="exportRow">.srt 로 저장</button>
+        <button class="link" id="resetLookRow">모양 되돌리기</button>
+      </div>
+      <details id="diag">
+        <summary>감지된 자막 후보</summary>
+        <ul id="candidates"></ul>
+      </details>
       <div id="diagLine"></div>
-    </header>
+      <div class="keys">
+        Shift+←/→ 싱크 · Shift+↑/↓ 크기 · Shift+,/. 배속 · Alt+드래그 위치
+      </div>
+    </div>
 
     <button id="injectBtn" class="btn-primary" style="display: none">
       이 탭에 지금 적용하기
     </button>
-
-    <div class="group">
-      <div class="group-title">영상</div>
-      <div class="card">
-        <!-- 디즈니+ 처럼 배속 버튼이 없는 플레이어를 위해 video.playbackRate 를 직접 건다. -->
-        <div class="row">
-          <span class="name fixed">배속</span>
-          <button class="btn grow" id="speedDown">느리게</button>
-          <span class="val" id="speedValue">1.0배</span>
-          <button class="btn grow" id="speedUp">빠르게</button>
-          <button class="btn" id="speedReset" title="1배로">↺</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="group">
-      <div class="group-title">자막</div>
-      <div class="card">
-        <div class="row">
-          <span class="name">자막 표시</span>
-          <span class="spacer"></span>
-          <input type="checkbox" id="enabled" class="switch" />
-        </div>
-        <div class="row tap" id="themeRow">
-          <span class="name">화면 모드</span>
-          <span class="spacer"></span>
-          <span class="val" id="themeValue"></span>
-          <i class="chev"></i>
-        </div>
-        <div class="row tap" id="trackRow">
-          <span class="name">표시할 자막</span>
-          <span class="spacer"></span>
-          <span class="val" id="trackValue">없음</span>
-          <i class="chev"></i>
-        </div>
-        <div class="row">
-          <span class="name fixed">싱크</span>
-          <button class="btn grow" id="syncMinus">−0.5초</button>
-          <span class="val" id="offsetValue">0.0초</span>
-          <button class="btn grow" id="syncPlus">+0.5초</button>
-          <button class="btn" id="syncReset">↺</button>
-        </div>
-</div>
-    </div>
-
-    <div class="group">
-      <div class="card">
-        <div id="preview">
-          <div id="previewWrap">
-            <div id="previewLine1">Sample subtitle text</div>
-            <div id="previewLine2">두 번째 언어 미리보기</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 모양 설정 열세 줄은 시트에서 펼친다. 본문에 두면 팝업이 600px 을 넘는다. -->
-    <div class="group">
-      <div class="card">
-        <div class="row tap" id="lookRow">
-          <span class="name">모양</span>
-          <span class="spacer"></span>
-          <span class="val">글자 · 외곽선 · 배경 · 배치</span>
-          <i class="chev"></i>
-        </div>
-        <div class="row tap" id="resetLookRow">
-          <span class="name accent">기본값으로 되돌리기</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="group">
-      <div class="card">
-        <label class="filepick">
-          파일에서 불러오기 (.srt / .vtt)
-          <input type="file" id="file" accept=".srt,.vtt,.txt,.xml,.ttml,.dfxp" />
-        </label>
-        <div class="row tap" id="exportRow">
-          <span class="name">.srt 파일로 저장</span>
-          <span class="spacer"></span>
-          <span class="val">폰 앱에서 쓰기</span>
-          <i class="chev"></i>
-        </div>
-      </div>
-    </div>
-
-    <details id="diag">
-      <summary>감지된 자막 후보 요청</summary>
-      <ul id="candidates"></ul>
-    </details>
-
-    <div class="footnote">
-      Shift+←/→ 싱크 · Shift+↑/↓ 크기 · Shift+,/. 배속 · Alt+드래그 위치
-    </div>
 
     <!-- 모양 묶음 보관함. 시트를 열면 이 안의 내용이 시트로 옮겨 간다. -->
     <div id="lookHost" hidden>

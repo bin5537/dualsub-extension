@@ -239,8 +239,30 @@
 
   /* ---------- 영상 찾기 · 렌더 ---------- */
 
+  /* querySelectorAll 은 섀도 루트를 넘지 않는다. 커스텀 엘리먼트로 플레이어를
+     감싸는 사이트에서는 문서에 video 가 없는 것처럼 보인다.
+     얕은 탐색이 빈손일 때만 섀도 루트를 훑는다 — 매 프레임 전체를 걷으면 비싸다. */
+  function collectVideos(root, out, depth) {
+    if (depth > 6) return;
+    out.push.apply(out, root.querySelectorAll('video'));
+    const all = root.querySelectorAll('*');
+    for (let i = 0; i < all.length; i += 1) {
+      const sr = all[i].shadowRoot;
+      if (sr) collectVideos(sr, out, depth + 1);
+    }
+  }
+
   function findVideo() {
-    const videos = Array.from(document.querySelectorAll('video'));
+    let videos = Array.from(document.querySelectorAll('video'));
+    if (!videos.length) {
+      const deep = [];
+      try {
+        collectVideos(document, deep, 0);
+      } catch (e) {
+        /* 문서가 바뀌는 중이면 던질 수 있다. 다음 렌더에서 다시 찾는다. */
+      }
+      videos = deep;
+    }
     if (!videos.length) return null;
     const playing = videos.find((v) => !v.paused && v.duration > 60);
     if (playing) return playing;
@@ -505,11 +527,8 @@
 
   /* ---------- 팝업과의 통신 ---------- */
 
-  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
-    if (!msg || !msg.type) return false;
-
-    if (msg.type === 'getState') {
-      sendResponse({
+  function buildState() {
+    return {
         tracks: state.tracks.map((t) => ({
           url: t.url,
           label: t.label,
@@ -528,9 +547,30 @@
         inspected: state.inspected,
         workerMessages: state.workerMessages,
         host: state.host || location.hostname
-      });
+      };
+  }
+
+  chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+    if (!msg || !msg.type) return false;
+
+    /* 팝업은 frameId 없이 보내므로 모든 프레임이 받고, 먼저 답한 하나만 전달된다.
+       최상위 프레임이 빈손으로 먼저 답하면 정작 영상이 있는 iframe 의 답이 버려진다.
+       보여줄 것이 없는 프레임은 조금 늦게 답해 자리를 양보한다. */
+    if (msg.type === 'getState') {
+      const empty = !findVideo() && !state.tracks.length && !state.candidates.length;
+      if (empty && window.top !== window) {
+        setTimeout(() => sendResponse(buildState()), 250);
+        return true;
+      }
+      if (empty && window.top === window) {
+        setTimeout(() => sendResponse(buildState()), 120);
+        return true;
+      }
+      sendResponse(buildState());
       return false;
     }
+
+
 
     if (msg.type === 'getCues') {
       const track = state.tracks.find((t) => t.url === msg.url);
