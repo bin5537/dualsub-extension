@@ -1,6 +1,25 @@
 'use strict';
 
 const $ = (id) => document.getElementById(id);
+
+/* 마크업을 손대다 id 하나를 빠뜨리면 $()가 null 을 돌려주고, 그걸 그대로 쓰는
+   자리에서 1.5초마다 터진다. 어느 id 가 없는지 시작할 때 한 번 짚어 준다 —
+   "null 의 open 을 읽을 수 없음" 보다 "diag 없음" 이 훨씬 빨리 잡힌다. */
+const REQUIRED = [
+  'enabled', 'status', 'diagLine', 'injectBtn', 'diag', 'candidates',
+  'preview', 'previewWrap', 'previewLine1', 'previewLine2', 'version',
+  'trackRow', 'trackValue', 'themeRow', 'themeValue',
+  'syncMinus', 'syncPlus', 'syncReset', 'offsetValue',
+  'speedDown', 'speedUp', 'speedReset', 'speedValue',
+  'lookRow', 'resetLookRow', 'exportRow', 'file',
+  'sheet', 'sheetBackdrop', 'sheetPanel', 'sheetTitle', 'sheetList',
+  'sheetNote', 'sheetCancel', 'sheetDone', 'lookHost', 'lookGroups'
+];
+
+function checkMarkup() {
+  const missing = REQUIRED.filter((id) => !$(id));
+  if (missing.length) console.error('[겹자막] 팝업에 없는 id:', missing.join(', '));
+}
 let tabId = null;
 let settings = null;
 let snapshot = { tracks: [], selected: [], maxLines: 3 };
@@ -206,8 +225,9 @@ function renderState(state) {
   $('injectBtn').style.display = state.hookReady ? 'none' : '';
   fillControls();
 
-  if ($('diag').getAttribute('aria-expanded') === 'true') {
-    const list = $('candidates');
+  const diagBtn = $('diag');
+  const list = $('candidates');
+  if (diagBtn && list && diagBtn.getAttribute('aria-expanded') === 'true') {
     list.innerHTML = '';
     for (const c of state.candidates || []) {
       const li = document.createElement('li');
@@ -427,6 +447,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('sheetBackdrop').addEventListener('click', () => closeSheet(false));
   $('sheetDone').addEventListener('click', () => closeSheet(true));
 
+  checkMarkup();
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
   tabId = tab.id;
