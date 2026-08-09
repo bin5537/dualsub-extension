@@ -50,7 +50,7 @@ const WEIGHT_NAMES = WEIGHTS.reduce((acc, w) => {
   acc[w.value] = w.label;
   return acc;
 }, {});
-const THEME_NAMES = { auto: '시스템 설정', light: '밝게', dark: '어둡게' };
+const THEME_NAMES = { auto: '시스템', light: '밝게', dark: '어둡게' };
 
 /** 팝업이 열리자마자 적용해야 깜빡이지 않는다. */
 function applyTheme(theme) {
