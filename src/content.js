@@ -272,11 +272,33 @@
 
      길이를 아는지(재생 가능한 물건인지)를 가장 크게 보고, 그다음 준비 상태,
      재생 중 여부, 마지막으로 화면에서 차지하는 넓이 순으로 고른다. */
+  /* MSE 로 붙이는 스트림은 duration 이 Infinity 로 나온다. 그때는 seekable 의
+     끝을 길이로 본다 — 디즈니+ 가 그렇다. duration 만 보면 진짜 플레이어도
+     "길이 모름" 으로 분류돼 껍데기와 구분이 안 된다. */
+  function playableLength(v) {
+    if (isFinite(v.duration) && v.duration > 0) return v.duration;
+    try {
+      if (v.seekable && v.seekable.length) {
+        return v.seekable.end(v.seekable.length - 1);
+      }
+    } catch (e) {
+      /* 아직 못 읽는다. */
+    }
+    try {
+      if (v.buffered && v.buffered.length) {
+        return v.buffered.end(v.buffered.length - 1);
+      }
+    } catch (e) {
+      /* 위와 같다. */
+    }
+    return 0;
+  }
+
   function videoScore(v) {
     const r = v.getBoundingClientRect();
     const area = Math.max(0, r.width) * Math.max(0, r.height);
     let s = area;
-    if (isFinite(v.duration) && v.duration > 60) s += 1e12;
+    if (playableLength(v) > 60) s += 1e12;
     if (v.readyState >= 1) s += 1e10;
     if (!v.paused) s += 1e9;
     return s;
@@ -619,7 +641,7 @@
             now: v.currentTime,
             /* 영상 길이와 자막 마지막 시각이 크게 다르면 둘이 다른 작품이다.
                (배경 예고편을 읽고 있거나, 이전 화 자막을 들고 있는 경우) */
-            dur: isFinite(v.duration) ? v.duration : null,
+            dur: playableLength(v) || null,
             muted: v.muted,
             paused: v.paused,
             seekStart: seek0,

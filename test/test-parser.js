@@ -159,10 +159,14 @@ check('null safe', P.parse(null), []);
 /* ── 진짜 플레이어 고르기 ──────────────────────────────────────────────
    디즈니+ 에는 화면을 꽉 채우면서도 메타데이터가 안 읽힌 채 멈춰 있는 <video>
    가 있다. 크기만 보고 고르면 그 껍데기를 붙잡아 재생 위치가 고정된다. */
+function playableLength(v) {
+  if (isFinite(v.duration) && v.duration > 0) return v.duration;
+  return v.seekableEnd || 0;
+}
 function videoScore(v) {
   const area = Math.max(0, v.w) * Math.max(0, v.h);
   let s = area;
-  if (isFinite(v.duration) && v.duration > 60) s += 1e12;
+  if (playableLength(v) > 60) s += 1e12;
   if (v.readyState >= 1) s += 1e10;
   if (!v.paused) s += 1e9;
   return s;
@@ -181,6 +185,10 @@ check('큰 껍데기보다 길이를 아는 본편', pick([껍데기, 본편]), 
 check('멈춰 있어도 본편을 고른다', pick([껍데기, { ...본편, paused: true }]), '본편');
 check('짧은 예고편보다 본편', pick([예고편, 본편]), '본편');
 check('본편이 없으면 준비된 쪽', pick([껍데기, { ...껍데기, name: '준비됨', readyState: 2 }]), '준비됨');
+/* 디즈니+ 는 MSE 라 duration 이 Infinity 다. seekable 끝을 봐야 구분된다. */
+const MSE본편 = { name: 'MSE본편', w: 1280, h: 720, duration: Infinity, seekableEnd: 2818, readyState: 4, paused: false };
+check('duration 이 Infinity 여도 seekable 로 본편을 고른다', pick([껍데기, MSE본편]), 'MSE본편');
+
 check('같은 조건이면 큰 쪽', pick([
   { name: '작음', w: 320, h: 180, duration: 3000, readyState: 4, paused: false },
   { name: '큼', w: 1280, h: 720, duration: 3000, readyState: 4, paused: false }

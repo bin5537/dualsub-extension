@@ -21,14 +21,11 @@ async function loadHlsSubtitle(playlistUrl) {
     const t = line.trim();
     if (!t || t.startsWith('#')) continue;
     /* 디즈니+ 는 본편 앞뒤로 안내 영상 조각(BUMPER·DUB_CARD)을 끼워넣는다.
-       이 조각을 목록에서 아예 빼 버리면 시간축 기준(baseline)이 본편 첫
-       조각으로 잡히는데, video.currentTime 은 그 앞 조각까지 포함해서 흐른다.
-       그만큼 자막이 통째로 당겨진다.
-       조각은 남겨 두고 자막만 버린다 — 자리를 지켜야 시간축이 맞는다. */
-    segments.push({
-      url: new URL(t, playlistUrl).href,
-      skip: /BUMPER|DUB_CARD/i.test(t)
-    });
+       이 조각은 본편과 다른 인코딩이라 MPEGTS 기준이 따로 논다. 목록에 남겨
+       기준점으로 삼으면 본편 오프셋이 통째로 부풀어, 47분짜리 화의 자막이
+       67분까지 늘어난다. 빼야 한다. */
+    if (/BUMPER|DUB_CARD/i.test(t)) continue;
+    segments.push({ url: new URL(t, playlistUrl).href, skip: false });
   }
   if (!segments.length) {
     // 재생목록이 아니라 자막 파일 자체였던 경우
