@@ -223,7 +223,8 @@ function renderState(state) {
   const timingText = tm
     ? ' · 재생 ' + tm.now.toFixed(1) + 's' +
       (tm.seekStart ? '(시작 ' + tm.seekStart.toFixed(1) + 's)' : '') +
-      ' · ' + (tm.top ? '최상위' : 'iframe') + ' ' + tm.w + '×' + tm.h +
+      ' · ' + (tm.top ? '최상위' : 'iframe') + ' 영상' + (tm.cand || 1) + '개 ' +
+      tm.w + '×' + tm.h +
       (tm.dur ? ' 길이 ' + tm.dur.toFixed(0) + 's' : ' 길이 ?') +
       (tm.muted ? ' 음소거' : '') + (tm.paused ? ' 멈춤' : '') +
       ' · 자막 ' + tm.cueCount + '개' +

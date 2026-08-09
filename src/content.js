@@ -264,6 +264,24 @@
     return r.width >= 240 && r.height >= 135;
   }
 
+  /* 여러 개 중 진짜 플레이어를 고른다.
+
+     크기만 보면 안 된다. 디즈니+ 에는 화면을 꽉 채우면서도 메타데이터조차
+     안 읽힌 채 20초에 멈춰 있는 <video> 가 있다. 그걸 붙잡으면 재생 위치가
+     늘 20초로 고정돼, 어디를 재생하든 같은 자막이 뜬다.
+
+     길이를 아는지(재생 가능한 물건인지)를 가장 크게 보고, 그다음 준비 상태,
+     재생 중 여부, 마지막으로 화면에서 차지하는 넓이 순으로 고른다. */
+  function videoScore(v) {
+    const r = v.getBoundingClientRect();
+    const area = Math.max(0, r.width) * Math.max(0, r.height);
+    let s = area;
+    if (isFinite(v.duration) && v.duration > 60) s += 1e12;
+    if (v.readyState >= 1) s += 1e10;
+    if (!v.paused) s += 1e9;
+    return s;
+  }
+
   function findVideo() {
     let videos = Array.from(document.querySelectorAll('video'));
     videoProbe.shallow = videos.length;
@@ -277,7 +295,6 @@
       }
       videos = deep;
       videoProbe.deep = deep.length;
-      /* audio 까지 세어 두면 "미디어 자체가 없다" 와 "video 만 없다" 가 갈린다. */
       try {
         videoProbe.media = document.querySelectorAll('video,audio').length;
       } catch (e) {
@@ -287,16 +304,15 @@
     if (!videos.length) return null;
     const real = videos.filter(isRealPlayer);
     const pool = real.length ? real : videos;
-    const playing = pool.find((v) => !v.paused && v.duration > 60);
-    if (playing) return playing;
-    /* 큰 것을 고른다. 길이가 아니라 화면에서 차지하는 넓이가 기준이다 —
-       길이는 아직 안 읽혔을 수 있지만 크기는 지금 보이는 그대로다. */
-    return pool.sort((a, b) => {
-      const ra = a.getBoundingClientRect();
-      const rb = b.getBoundingClientRect();
-      return rb.width * rb.height - ra.width * ra.height;
-    })[0];
+    let best = pool[0];
+    let bestScore = videoScore(best);
+    for (let i = 1; i < pool.length; i += 1) {
+      const s = videoScore(pool[i]);
+      if (s > bestScore) { best = pool[i]; bestScore = s; }
+    }
+    return best;
   }
+
 
   function render() {
     if (!settings.enabled) {
@@ -597,6 +613,7 @@
           } catch (e) { seek0 = 0; }
           return {
             top: window.top === window,
+            cand: document.querySelectorAll('video').length,
             w: Math.round(v.getBoundingClientRect().width),
             h: Math.round(v.getBoundingClientRect().height),
             now: v.currentTime,

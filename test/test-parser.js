@@ -156,5 +156,36 @@ check('empty string', P.parse(''), []);
 check('garbage', P.parse('not a subtitle file at all'), []);
 check('null safe', P.parse(null), []);
 
+/* ── 진짜 플레이어 고르기 ──────────────────────────────────────────────
+   디즈니+ 에는 화면을 꽉 채우면서도 메타데이터가 안 읽힌 채 멈춰 있는 <video>
+   가 있다. 크기만 보고 고르면 그 껍데기를 붙잡아 재생 위치가 고정된다. */
+function videoScore(v) {
+  const area = Math.max(0, v.w) * Math.max(0, v.h);
+  let s = area;
+  if (isFinite(v.duration) && v.duration > 60) s += 1e12;
+  if (v.readyState >= 1) s += 1e10;
+  if (!v.paused) s += 1e9;
+  return s;
+}
+function pick(list) {
+  let best = list[0];
+  for (const v of list) if (videoScore(v) > videoScore(best)) best = v;
+  return best.name;
+}
+
+const 껍데기 = { name: '껍데기', w: 1985, h: 1016, duration: NaN, readyState: 0, paused: true };
+const 본편 = { name: '본편', w: 1280, h: 720, duration: 2818, readyState: 4, paused: false };
+const 예고편 = { name: '예고편', w: 1920, h: 1080, duration: 30, readyState: 4, paused: false };
+
+check('큰 껍데기보다 길이를 아는 본편', pick([껍데기, 본편]), '본편');
+check('멈춰 있어도 본편을 고른다', pick([껍데기, { ...본편, paused: true }]), '본편');
+check('짧은 예고편보다 본편', pick([예고편, 본편]), '본편');
+check('본편이 없으면 준비된 쪽', pick([껍데기, { ...껍데기, name: '준비됨', readyState: 2 }]), '준비됨');
+check('같은 조건이면 큰 쪽', pick([
+  { name: '작음', w: 320, h: 180, duration: 3000, readyState: 4, paused: false },
+  { name: '큼', w: 1280, h: 720, duration: 3000, readyState: 4, paused: false }
+]), '큼');
+
 console.log(failures === 0 ? '\nALL PASSED' : '\n' + failures + ' FAILURE(S)');
 process.exit(failures ? 1 : 0);
+
