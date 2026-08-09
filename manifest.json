@@ -1,10 +1,13 @@
 {
   "manifest_version": 3,
   "name": "겹자막",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "author": "b1n2da",
   "description": "넷플릭스·디즈니+·티빙에 등록된 자막을 두 언어로 동시에 표시합니다.",
-  "permissions": ["storage", "scripting"],
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
   "host_permissions": [
     "*://*.netflix.com/*",
     "*://*.nflxvideo.net/*",
@@ -47,7 +50,9 @@
         "*://*.tving.com/*",
         "*://*.wavve.com/*"
       ],
-      "js": ["src/hook.js"],
+      "js": [
+        "src/hook.js"
+      ],
       "run_at": "document_start",
       "world": "MAIN",
       "all_frames": true
@@ -59,8 +64,13 @@
         "*://*.tving.com/*",
         "*://*.wavve.com/*"
       ],
-      "js": ["src/parser.js", "src/content.js"],
-      "css": ["src/overlay.css"],
+      "js": [
+        "src/parser.js",
+        "src/content.js"
+      ],
+      "css": [
+        "src/overlay.css"
+      ],
       "run_at": "document_idle",
       "all_frames": true
     }

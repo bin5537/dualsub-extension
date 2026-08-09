@@ -28,6 +28,11 @@ for (const f of ['hook.js', 'content.js', 'background.js', 'popup.js', 'parser.j
 }
 try {
   JSON.parse(fs.readFileSync(nodePath.join(ROOT, 'manifest.json'), 'utf8'));
+  /* manifest 와 package 의 버전이 갈라진 적이 있다(0.9.1 vs 0.8.0).
+     팝업에 뜨는 값은 manifest 라서 눈으로는 안 잡힌다. */
+  const mv = JSON.parse(fs.readFileSync(nodePath.join(ROOT, 'manifest.json'), 'utf8')).version;
+  const pv = JSON.parse(fs.readFileSync(nodePath.join(ROOT, 'package.json'), 'utf8')).version;
+  check('manifest 와 package 버전이 같다', mv, pv);
   console.log('  OK   manifest.json');
 } catch (e) {
   failures++;
