@@ -301,6 +301,54 @@
     return !!v && isRealPlayer(v) && playableLength(v) > 60;
   }
 
+  /* 재생 위치를 어디서 읽을 것인가.
+
+     디즈니+ 는 미디어 타임라인을 재생 위치마다 0 근처로 다시 맞춘다. 그래서
+     seekable 이 [0, 44초] 인데 실제로는 29분 27초 지점을 보고 있다.
+     video.currentTime 은 그 44초 창 안의 값이라 자막 시각과 아무 관계가 없다.
+     (배속은 같은 요소에 걸리므로 잘 듣는다 — 그래서 이 차이가 안 보였다.)
+
+     이럴 때는 플레이어가 화면에 표시하는 위치를 쓴다. 진행 막대는 접근성을
+     위해 aria-valuenow 에 초 단위 값을 실어 둔다. */
+  function sliderTime() {
+    let els;
+    try {
+      els = document.querySelectorAll('[role="slider"][aria-valuenow]');
+    } catch (e) {
+      return null;
+    }
+    for (let i = 0; i < els.length; i += 1) {
+      const now = parseFloat(els[i].getAttribute('aria-valuenow'));
+      const max = parseFloat(els[i].getAttribute('aria-valuemax'));
+      /* 볼륨 막대도 slider 다. 최대값이 분 단위를 넘어야 재생 막대로 본다. */
+      if (isFinite(now) && isFinite(max) && max > 300) return now;
+    }
+    return null;
+  }
+
+  /* 미디어 창이 자막이 덮는 길이보다 한참 짧으면 currentTime 을 믿을 수 없다. */
+  function presentationTime(video) {
+    const win = playableLength(video);
+    let span = 0;
+    for (let i = 0; i < state.selected.length; i += 1) {
+      const cues = state.cuesByUrl[state.selected[i]];
+      if (cues && cues.length) {
+        span = Math.max(span, cues[cues.length - 1].end / 1000);
+      }
+    }
+    if (span > 300 && win && win < span * 0.5) {
+      const s = sliderTime();
+      if (s !== null) {
+        timeSource = 'slider';
+        return s;
+      }
+    }
+    timeSource = 'video';
+    return video.currentTime;
+  }
+
+  let timeSource = 'video';
+
   function videoScore(v) {
     const r = v.getBoundingClientRect();
     const area = Math.max(0, r.width) * Math.max(0, r.height);
@@ -388,7 +436,7 @@
     ensureOverlay();
     attachOverlay();
 
-    const t = video.currentTime * 1000 - settings.offsetMs;
+    const t = presentationTime(video) * 1000 - settings.offsetMs;
     const texts = state.selected.map((url) => {
       const cue = P.cueAt(state.cuesByUrl[url] || [], t);
       return cue ? cue.text : '';
@@ -646,7 +694,7 @@
         timing: (function () {
           const v = findVideo();
           if (!v) return null;
-          const t0 = v.currentTime * 1000 - settings.offsetMs;
+          const t0 = presentationTime(v) * 1000 - settings.offsetMs;
           const url = state.selected[0];
           const cues = (url && state.cuesByUrl[url]) || [];
           let cur = null;
@@ -665,7 +713,10 @@
             deep: deepCache.length,
             w: Math.round(v.getBoundingClientRect().width),
             h: Math.round(v.getBoundingClientRect().height),
-            now: v.currentTime,
+            now: presentationTime(v),
+            raw: v.currentTime,
+            src: timeSource,
+            slider: sliderTime(),
             /* 영상 길이와 자막 마지막 시각이 크게 다르면 둘이 다른 작품이다.
                (배경 예고편을 읽고 있거나, 이전 화 자막을 들고 있는 경우) */
             dur: playableLength(v) || null,

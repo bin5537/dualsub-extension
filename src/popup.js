@@ -221,7 +221,10 @@ function renderState(state) {
       ' · 미디어 ' + (vp.media || 0) + ' · 하위프레임 ' + (vp.frames || 0) + ')';
   const tm = state.timing;
   const timingText = tm
-    ? ' · 재생 ' + tm.now.toFixed(1) + 's' +
+    ? ' · 재생 ' + tm.now.toFixed(1) + 's' + (tm.src === 'slider' ? '(막대)' : '') +
+      (tm.slider !== null && tm.slider !== undefined
+        ? ' 막대 ' + tm.slider.toFixed(0) + 's' : ' 막대없음') +
+      ' 원본 ' + (tm.raw || 0).toFixed(1) + 's' +
       (tm.seekStart ? '(시작 ' + tm.seekStart.toFixed(1) + 's)' : '') +
       ' · ' + (tm.top ? '최상위' : 'iframe') + ' 영상[' + (tm.cand || '') + ']' +
       (tm.deep ? '+섀도' + tm.deep : '') + ' ' +
