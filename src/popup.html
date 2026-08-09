@@ -366,7 +366,21 @@
       .footRow {
         display: flex;
         align-items: center;
-        gap: 12px;
+        flex-wrap: wrap;
+        gap: 4px 12px;
+      }
+      #candidates {
+        margin: 2px 0 0;
+        padding: 0 0 0 14px;
+        max-height: 90px;
+        overflow-y: auto;
+        font-size: 10.5px;
+        line-height: 1.5;
+        color: var(--tertiary);
+        word-break: break-all;
+      }
+      #diag[aria-expanded="true"] {
+        color: var(--accent);
       }
       .foot .link {
         border: none;
@@ -784,11 +798,12 @@
       <div class="footRow">
         <button class="link" id="exportRow">.srt 로 저장</button>
         <button class="link" id="resetLookRow">모양 되돌리기</button>
+        <!-- details 를 쓰면 기본 삼각형 표식과 들여쓰기 때문에 옆 링크들과
+             줄이 안 맞는다. 열림 여부만 필요하므로 button 으로 바꾸고
+             popup.js 는 open 속성 대신 aria-expanded 를 본다. -->
+        <button class="link" id="diag" aria-expanded="false">감지된 자막 후보</button>
       </div>
-      <details id="diag">
-        <summary>감지된 자막 후보</summary>
-        <ul id="candidates"></ul>
-      </details>
+      <ul id="candidates" hidden></ul>
       <div id="diagLine"></div>
       <div class="keys">
         Shift+←/→ 싱크 · Shift+↑/↓ 크기 · Shift+,/. 배속 · Alt+드래그 위치

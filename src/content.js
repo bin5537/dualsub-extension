@@ -252,8 +252,14 @@
     }
   }
 
+  /* 왜 못 찾는지 팝업에서 보이게 남긴다. "영상 없음" 만으로는
+     섀도 DOM 인지 iframe 인지 아직 안 붙은 것인지 구분할 수 없다. */
+  const videoProbe = { shallow: 0, deep: 0, frames: 0, media: 0 };
+
   function findVideo() {
     let videos = Array.from(document.querySelectorAll('video'));
+    videoProbe.shallow = videos.length;
+    videoProbe.frames = window.frames.length;
     if (!videos.length) {
       const deep = [];
       try {
@@ -262,6 +268,13 @@
         /* 문서가 바뀌는 중이면 던질 수 있다. 다음 렌더에서 다시 찾는다. */
       }
       videos = deep;
+      videoProbe.deep = deep.length;
+      /* audio 까지 세어 두면 "미디어 자체가 없다" 와 "video 만 없다" 가 갈린다. */
+      try {
+        videoProbe.media = document.querySelectorAll('video,audio').length;
+      } catch (e) {
+        videoProbe.media = 0;
+      }
     }
     if (!videos.length) return null;
     const playing = videos.find((v) => !v.paused && v.duration > 60);
@@ -543,6 +556,7 @@
         settings,
         maxLines: MAX_LINES,
         hasVideo: !!findVideo(),
+        videoProbe: videoProbe,
         hookReady: state.hookReady,
         inspected: state.inspected,
         workerMessages: state.workerMessages,
@@ -558,16 +572,21 @@
        보여줄 것이 없는 프레임은 조금 늦게 답해 자리를 양보한다. */
     if (msg.type === 'getState') {
       const empty = !findVideo() && !state.tracks.length && !state.candidates.length;
-      if (empty && window.top !== window) {
-        setTimeout(() => sendResponse(buildState()), 250);
-        return true;
+      if (!empty) {
+        sendResponse(buildState());
+        return false;
       }
-      if (empty && window.top === window) {
-        setTimeout(() => sendResponse(buildState()), 120);
-        return true;
-      }
-      sendResponse(buildState());
-      return false;
+      /* 늦게 답하는 사이 팝업이 닫히면 통로가 사라져 sendResponse 가 던진다.
+         팝업은 1.5초마다 다시 물어보므로 놓친 응답은 문제가 되지 않는다. */
+      const wait = window.top === window ? 120 : 250;
+      setTimeout(() => {
+        try {
+          sendResponse(buildState());
+        } catch (e) {
+          /* 팝업이 이미 닫혔다. */
+        }
+      }, wait);
+      return true;
     }
 
 

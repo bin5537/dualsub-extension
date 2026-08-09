@@ -195,14 +195,18 @@ function renderState(state) {
     maxLines: state.maxLines || 3
   };
   $('status').textContent = state.status || '';
+  const vp = state.videoProbe || {};
+  const videoText = state.hasVideo
+    ? '영상 감지됨'
+    : '영상 없음 (문서 ' + (vp.shallow || 0) + ' · 섀도 ' + (vp.deep || 0) +
+      ' · 미디어 ' + (vp.media || 0) + ' · 하위프레임 ' + (vp.frames || 0) + ')';
   $('diagLine').textContent = state.hookReady
-    ? (state.host || '') + ' · 응답 ' + (state.inspected || 0) + '건 · 영상 ' +
-      (state.hasVideo ? '감지됨' : '없음')
+    ? (state.host || '') + ' · 응답 ' + (state.inspected || 0) + '건 · ' + videoText
     : '⚠ 후킹 미적용 — 아래 버튼을 누르거나 Ctrl+R 하세요';
   $('injectBtn').style.display = state.hookReady ? 'none' : '';
   fillControls();
 
-  if ($('diag').open) {
+  if ($('diag').getAttribute('aria-expanded') === 'true') {
     const list = $('candidates');
     list.innerHTML = '';
     for (const c of state.candidates || []) {
@@ -551,6 +555,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     pushSettings({ offsetMs: settings.offsetMs + 500 })
   );
   $('syncReset').addEventListener('click', () => pushSettings({ offsetMs: 0 }));
+
+  $('diag').addEventListener('click', () => {
+    const on = $('diag').getAttribute('aria-expanded') !== 'true';
+    $('diag').setAttribute('aria-expanded', String(on));
+    $('candidates').hidden = !on;
+    refresh();
+  });
 
   /* 배속. 0.25 단위로 0.25~4배.
      정수 배수만 쓰면 1.5 · 1.75 처럼 실제로 자주 쓰는 값에 닿지 못한다. */
