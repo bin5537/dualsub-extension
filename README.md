@@ -98,3 +98,7 @@ npm test
 ## 라이선스
 
 MIT
+
+## 개인정보처리방침
+
+수집하는 데이터가 없다. [PRIVACY.md](PRIVACY.md)
