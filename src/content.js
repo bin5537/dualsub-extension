@@ -131,12 +131,13 @@
   }
 
   /** 전체화면일 때는 전체화면 요소 안에 있어야 보인다. */
+  /* 영상의 부모에 붙이면 그 부모가 안 보이는 요소일 때 자막까지 사라진다.
+     디즈니+ 에서 실제로 그랬다 — 화면 밖 껍데기 영상의 부모에 붙어 있었다.
+     전체화면 요소가 있으면 그 안에, 없으면 문서에 붙이고 화면 기준으로 띄운다. */
   function attachOverlay() {
-    const host =
-      document.fullscreenElement ||
-      (currentVideo && currentVideo.parentElement) ||
-      document.body;
+    const host = document.fullscreenElement || document.body;
     if (overlay.parentElement !== host) host.appendChild(overlay);
+    overlay.style.position = host === document.body ? 'fixed' : 'absolute';
     if (host !== document.body && getComputedStyle(host).position === 'static') {
       host.style.position = 'relative';
     }
@@ -337,6 +338,12 @@
       }
     }
     if (span > 300 && win && win < span * 0.5) {
+      /* 창이 자막보다 한참 짧다 = 플레이어가 타임라인을 다시 맞췄다.
+         hook 이 알려준 보정값으로 되돌린다. */
+      if (timeShift) {
+        timeSource = 'shift';
+        return video.currentTime - timeShift;
+      }
       const s = sliderTime();
       if (s !== null) {
         timeSource = 'slider';
@@ -348,6 +355,8 @@
   }
 
   let timeSource = 'video';
+  /* MediaSource 로 세그먼트를 당겨 붙일 때 쓴 값(hook.js 가 알려준다). */
+  let timeShift = 0;
 
   function videoScore(v) {
     const r = v.getBoundingClientRect();
@@ -614,6 +623,14 @@
     const data = event.data;
     if (!data || data.__dualsub !== 'DUALSUB') return;
 
+    if (data.type === 'timeshift') {
+      /* 플레이어가 세그먼트를 당겨 붙일 때 쓴 값. 실제 재생 위치는
+         currentTime - offset 이다. 여러 번 오면 마지막 값이 지금 창의 기준. */
+      const v = data.payload && data.payload.offset;
+      if (typeof v === 'number' && isFinite(v)) timeShift = v;
+      return;
+    }
+
     if (data.type === 'tracks') {
       let added = false;
       for (const t of data.payload.tracks || []) {
@@ -716,6 +733,7 @@
             now: presentationTime(v),
             raw: v.currentTime,
             src: timeSource,
+            shift: timeShift,
             slider: sliderTime(),
             /* 영상 길이와 자막 마지막 시각이 크게 다르면 둘이 다른 작품이다.
                (배경 예고편을 읽고 있거나, 이전 화 자막을 들고 있는 경우) */

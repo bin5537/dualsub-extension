@@ -15,6 +15,43 @@
   function send(type, payload) {
     try {
       window.postMessage({ __dualsub: CHANNEL, type, payload }, '*');
+
+  /* ── 재생 위치 보정 ────────────────────────────────────────────────────
+     디즈니+ 는 재생 위치를 옮길 때마다 MediaSource 를 다시 만들고 세그먼트를
+     0 근처로 당겨 붙인다. 그래서 video.currentTime 은 "이번에 붙인 창 안의
+     위치" 일 뿐 실제 재생 위치가 아니다 — 29분 지점인데 31초로 나온다.
+
+     당길 때 쓰는 값이 SourceBuffer.timestampOffset 이다. 이 값을 알면
+     실제 위치 = currentTime - timestampOffset 으로 되돌릴 수 있다.
+     원래 setter 는 그대로 부르고 값만 엿본다. */
+  try {
+    const SB = window.SourceBuffer;
+    const desc =
+      SB && Object.getOwnPropertyDescriptor(SB.prototype, 'timestampOffset');
+    if (desc && desc.set && desc.get) {
+      Object.defineProperty(SB.prototype, 'timestampOffset', {
+        configurable: true,
+        enumerable: desc.enumerable,
+        get: function () {
+          return desc.get.call(this);
+        },
+        set: function (v) {
+          const r = desc.set.call(this, v);
+          try {
+            if (typeof v === 'number' && isFinite(v) && v !== 0) {
+              send('timeshift', { offset: v });
+            }
+          } catch (e) {
+            /* 알리는 데 실패해도 재생은 계속돼야 한다. */
+          }
+          return r;
+        }
+      });
+    }
+  } catch (e) {
+    /* 브라우저가 막으면 그냥 넘어간다. 이 보정 없이도 넷플릭스 등은 잘 된다. */
+  }
+
     } catch (e) {
       /* 구조화 복제 불가능한 값은 무시 */
     }
