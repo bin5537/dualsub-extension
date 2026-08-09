@@ -294,6 +294,13 @@
     return 0;
   }
 
+  /* 재생할 만한 물건인지. 37초짜리 광고·안내 조각과 본편을 가르는 선이다.
+     이 선을 넘지 못하면 자막을 그리지 않는다 — 그리면 그 프레임에도 오버레이가
+     생겨 진짜 플레이어 위에 엉뚱한 문장이 겹친다. */
+  function isPlayerVideo(v) {
+    return !!v && isRealPlayer(v) && playableLength(v) > 60;
+  }
+
   function videoScore(v) {
     const r = v.getBoundingClientRect();
     const area = Math.max(0, r.width) * Math.max(0, r.height);
@@ -342,9 +349,7 @@
       return;
     }
     const video = findVideo();
-    /* 보이지 않는 영상에는 그리지 않는다. 그리면 그 프레임에도 오버레이가 생겨
-       진짜 플레이어의 자막 위에 다른 문장이 겹친다. */
-    if (video && !isRealPlayer(video)) {
+    if (video && !isPlayerVideo(video)) {
       if (overlay) overlay.style.display = 'none';
       return;
     }
@@ -635,7 +640,9 @@
           } catch (e) { seek0 = 0; }
           return {
             top: window.top === window,
-            cand: document.querySelectorAll('video').length,
+            cand: Array.from(document.querySelectorAll('video'))
+              .map((x) => Math.round(playableLength(x)) + 's')
+              .join('/'),
             w: Math.round(v.getBoundingClientRect().width),
             h: Math.round(v.getBoundingClientRect().height),
             now: v.currentTime,
@@ -664,15 +671,19 @@
     /* 팝업은 frameId 없이 보내므로 모든 프레임이 받고, 먼저 답한 하나만 전달된다.
        최상위 프레임이 빈손으로 먼저 답하면 정작 영상이 있는 iframe 의 답이 버려진다.
        보여줄 것이 없는 프레임은 조금 늦게 답해 자리를 양보한다. */
+    /* 팝업은 frameId 없이 보내므로 모든 프레임이 받고 먼저 답한 하나만 전달된다.
+       그래서 답하는 순서가 곧 우선순위다. 본편을 쥔 프레임이 먼저 답해야
+       껍데기만 있는 최상위 프레임의 답에 밀리지 않는다. */
     if (msg.type === 'getState') {
-      const empty = !findVideo() && !state.tracks.length && !state.candidates.length;
-      if (!empty) {
+      const v = findVideo();
+      if (isPlayerVideo(v)) {
         sendResponse(buildState());
         return false;
       }
+      const hasAnything = v || state.tracks.length || state.candidates.length;
+      const wait = hasAnything ? 200 : 400;
       /* 늦게 답하는 사이 팝업이 닫히면 통로가 사라져 sendResponse 가 던진다.
          팝업은 1.5초마다 다시 물어보므로 놓친 응답은 문제가 되지 않는다. */
-      const wait = window.top === window ? 120 : 250;
       setTimeout(() => {
         try {
           sendResponse(buildState());
