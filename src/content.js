@@ -600,6 +600,11 @@
             w: Math.round(v.getBoundingClientRect().width),
             h: Math.round(v.getBoundingClientRect().height),
             now: v.currentTime,
+            /* 영상 길이와 자막 마지막 시각이 크게 다르면 둘이 다른 작품이다.
+               (배경 예고편을 읽고 있거나, 이전 화 자막을 들고 있는 경우) */
+            dur: isFinite(v.duration) ? v.duration : null,
+            muted: v.muted,
+            paused: v.paused,
             seekStart: seek0,
             cueCount: cues.length,
             first: cues.length ? cues[0].start / 1000 : null,
