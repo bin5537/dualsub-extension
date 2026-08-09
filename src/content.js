@@ -96,18 +96,28 @@
 
   /* ---------- 설정 ---------- */
 
-  chrome.storage.local.get('settings', (data) => {
-    const saved = (data && data.settings) || {};
-    Object.assign(settings, saved);
-    if (!Array.isArray(settings.langs)) settings.langs = [];
-    // 켬/끔으로 저장된 옛 값을 단계 값으로 옮긴다.
-    if (saved.fontWeight === undefined) settings.fontWeight = saved.bold ? 700 : 400;
-    applyStyle();
-    applySpeed();
-  });
+  /* 옛 스크립트가 남아 있는 탭에서는 여기서부터 던진다. 조용히 넘어간다. */
+  try {
+    chrome.storage.local.get('settings', (data) => {
+      const saved = (data && data.settings) || {};
+      Object.assign(settings, saved);
+      if (!Array.isArray(settings.langs)) settings.langs = [];
+      // 켬/끔으로 저장된 옛 값을 단계 값으로 옮긴다.
+      if (saved.fontWeight === undefined) settings.fontWeight = saved.bold ? 700 : 400;
+      applyStyle();
+      applySpeed();
+    });
+  } catch (e) {
+    /* 확장 컨텍스트가 끊긴 탭. 새로고침하면 정상으로 돌아온다. */
+  }
 
   function saveSettings() {
-    chrome.storage.local.set({ settings });
+    if (!alive()) return;
+    try {
+      chrome.storage.local.set({ settings });
+    } catch (e) {
+      dead = true;
+    }
   }
 
   /* ---------- 오버레이 ---------- */
@@ -416,6 +426,7 @@
 
 
   function render() {
+    if (!alive()) return;
     if (!settings.enabled) {
       if (overlay) overlay.style.display = 'none';
       return;
@@ -558,13 +569,32 @@
     }
   }
 
+  /* 확장을 새로고침하면 페이지에 남아 있던 옛 스크립트의 chrome API 가 끊긴다
+     ("Extension context invalidated"). 탭을 새로고침하면 사라지지만, 그때까지
+     루프가 계속 돌며 같은 오류를 쏟아낸다. 한 번 끊기면 조용히 멈춘다. */
+  let dead = false;
+
+  function alive() {
+    if (dead) return false;
+    try {
+      if (chrome.runtime && chrome.runtime.id) return true;
+    } catch (e) {
+      /* 접근 자체가 던진다. */
+    }
+    dead = true;
+    if (overlay && overlay.parentElement) overlay.parentElement.removeChild(overlay);
+    return false;
+  }
+
   function ensureCues(url) {
+    if (!alive()) return;
     if (state.cuesByUrl[url]) return;
     const track = state.tracks.find((t) => t.url === url);
     if (!track) return;
     if (track.format === 'inline') return; // 이미 본문을 받아 파싱해둔 트랙
     state.status = track.label + ' 불러오는 중…';
-    chrome.runtime.sendMessage({ type: 'loadTrack', track }, (res) => {
+    try {
+      chrome.runtime.sendMessage({ type: 'loadTrack', track }, (res) => {
       if (chrome.runtime.lastError || !res || !res.ok) {
         const msg = chrome.runtime.lastError
           ? chrome.runtime.lastError.message
@@ -576,8 +606,11 @@
       state.cuesByUrl[url] = res.cues || [];
       lastSignature = '';
       state.status = describeSelection();
-      toast('겹자막: ' + track.label + ' (' + (res.cues || []).length + '개 대사)');
-    });
+        toast('겹자막: ' + track.label + ' (' + (res.cues || []).length + '개 대사)');
+      });
+    } catch (e) {
+      dead = true;
+    }
   }
 
   /* 같은 언어가 매니페스트·자막본문 등 여러 경로로 들어와 목록이 중복된다.
