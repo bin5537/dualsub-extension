@@ -207,6 +207,17 @@ check('같은 조건이면 큰 쪽', pick([
   check('render 안에 감추기가 있으면 켜기도 있다', hides > 0 && shows > 0, true);
 }
 
+/* 보정값이 틀리면 자막이 통째로 사라진다. 범위를 벗어나면 쓰지 않는다. */
+function correctedTime(now, shift, span) {
+  const shifted = now - shift;
+  if (shifted >= 0 && shifted <= span + 60) return shifted;
+  return now;
+}
+check('보정이 범위 안이면 쓴다', correctedTime(664, -1717, 2820), 2381);
+check('보정이 자막 끝을 넘으면 버린다', correctedTime(664, -3499, 4046), 664);
+check('보정이 음수가 되면 버린다', correctedTime(30, 500, 2820), 30);
+check('보정이 없으면 그대로', correctedTime(120, 0, 2820), 120);
+
 console.log(failures === 0 ? '\nALL PASSED' : '\n' + failures + ' FAILURE(S)');
 process.exit(failures ? 1 : 0);
 

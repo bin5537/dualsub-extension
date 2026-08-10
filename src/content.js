@@ -349,10 +349,19 @@
     }
     if (span > 300 && win && win < span * 0.5) {
       /* 창이 자막보다 한참 짧다 = 플레이어가 타임라인을 다시 맞췄다.
-         hook 이 알려준 보정값으로 되돌린다. */
+         hook 이 알려준 보정값으로 되돌린다.
+
+         다만 보정 결과가 자막이 덮는 범위를 벗어나면 그 값은 틀린 것이다.
+         플레이어가 버퍼마다 다른 오프셋을 쓰면 마지막 값이 엉뚱할 수 있다.
+         실제로 47분짜리 화에서 4162초가 나와 자막이 통째로 사라졌다.
+         틀린 보정으로 아무것도 못 보여주느니 원래 값으로 돌아간다. */
       if (timeShift) {
-        timeSource = 'shift';
-        return video.currentTime - timeShift;
+        const shifted = video.currentTime - timeShift;
+        if (shifted >= 0 && shifted <= span + 60) {
+          timeSource = 'shift';
+          return shifted;
+        }
+        timeSource = 'shift?';
       }
       const s = sliderTime();
       if (s !== null) {
