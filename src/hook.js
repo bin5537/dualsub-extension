@@ -477,13 +477,25 @@
           const url = (response && response.url) || String(args[0] || '');
           const ct = response.headers ? response.headers.get('content-type') : '';
           const type = ct || '';
-          // 영상 세그먼트는 건드리지 않는다 (대용량 복제 방지)
-          if (!/video|audio|image|font/i.test(type)) {
+          const len = response.headers
+            ? parseInt(response.headers.get('content-length') || '0', 10)
+            : 0;
+          /* 복제는 공짜가 아니다. clone() 한 쪽을 다 읽을 때까지 브라우저가 본문을
+             메모리에 붙들고 있어서, 영상 세그먼트를 복제하면 재생이 끊긴다.
+             앞서는 content-type 으로만 걸렀는데, 디즈니+ 세그먼트는 타입이 비어
+             있거나 octet-stream 으로 와서 그물을 빠져나갔다.
+
+             자막은 크지 않다. 4MB 를 넘는 응답과 확장자로 영상임이 분명한 것은
+             아예 손대지 않는다. */
+          const isMedia =
+            /video|audio|image|font|octet-stream|mp4|mpegurl/i.test(type) ||
+            /\.(m4s|mp4|m4v|m4a|ts|aac|webm|cmfv|cmfa|jpg|png)(\?|$)/i.test(url);
+          if (!isMedia && !(len > 4 * 1024 * 1024)) {
             response
               .clone()
               .text()
               .then((text) => {
-                if (text && text.length < 12 * 1024 * 1024) inspect(url, text, type);
+                if (text && text.length < 4 * 1024 * 1024) inspect(url, text, type);
               })
               .catch(() => {});
           }
@@ -527,30 +539,50 @@
     return SendOrig.apply(this, arguments);
   };
 
-  /* ---------- JSON.stringify 후킹 (나가는 요청 손보기) ----------
+  /* ---------- JSON.stringify 후킹 (넷플릭스 매니페스트 요청) ----------
    * 넷플릭스 매니페스트 요청은 암호화되어 나가지만, 암호화 직전에 객체를 문자열로 바꾼다.
-   * 그 지점에서 자막 프로필과 "모든 언어 보여주기" 옵션을 얹는다. */
+   * 그 지점에서 자막 프로필과 "모든 언어 보여주기" 옵션을 얹는다.
+   *
+   * 넷플릭스에서만 한다. webvtt-lssdh-ios8 은 넷플릭스 전용 값이라 다른 서비스의
+   * 요청에 끼워 넣으면 서버가 거부하고 재생이 실패한다 — 디즈니+ 오류 83 이 그것이었다.
+   * URL 에 "manifest" 가 들어간다는 이유만으로 남의 요청을 고치고 있었다.
+   *
+   * 원본 객체도 건드리지 않는다. profiles 에 값을 밀어 넣으면 페이지가 들고 있는
+   * 객체가 영구히 바뀌어, 이후 요청에도 계속 따라붙는다. 보낼 문자열만 바꾼다. */
   const nativeStringify = JSON.stringify;
   const MANIFEST_REQUEST = /manifest/i;
   const WANTED_PROFILE = 'webvtt-lssdh-ios8';
+  const IS_NETFLIX = /(^|\.)netflix\.com$/i.test(location.hostname);
 
   JSON.stringify = function (value) {
     try {
       if (
+        IS_NETFLIX &&
         value &&
         typeof value === 'object' &&
         typeof value.url === 'string' &&
         MANIFEST_REQUEST.test(value.url)
       ) {
+        let copy = null;
         for (const key of Object.keys(value)) {
           const part = value[key];
           if (!part || typeof part !== 'object') continue;
-          if (Array.isArray(part.profiles) && part.profiles.indexOf(WANTED_PROFILE) === -1) {
-            part.profiles.unshift(WANTED_PROFILE);
+          const needsProfile =
+            Array.isArray(part.profiles) &&
+            part.profiles.indexOf(WANTED_PROFILE) === -1;
+          const needsAllTracks = part.showAllSubDubTracks === false;
+          if (!needsProfile && !needsAllTracks) continue;
+
+          if (!copy) copy = Object.assign({}, value);
+          const partCopy = Object.assign({}, part);
+          if (needsProfile) {
+            partCopy.profiles = [WANTED_PROFILE].concat(part.profiles);
           }
-          // 지역·프로필 설정 때문에 숨겨지는 언어까지 목록에 담아달라고 요청한다.
-          if (part.showAllSubDubTracks === false) part.showAllSubDubTracks = true;
+          /* 지역·프로필 설정 때문에 숨겨지는 언어까지 목록에 담아달라고 요청한다. */
+          if (needsAllTracks) partCopy.showAllSubDubTracks = true;
+          copy[key] = partCopy;
         }
+        if (copy) return nativeStringify.call(this, copy);
       }
     } catch (e) {
       /* 요청 변형에 실패해도 원본은 그대로 내보낸다 */

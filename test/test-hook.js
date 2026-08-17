@@ -215,24 +215,68 @@ const manifestReq = {
   }
 };
 const encoded = sandboxJSON.stringify(manifestReq);
-check('webvtt profile injected',
-  manifestReq.params.profiles.includes('webvtt-lssdh-ios8'), true);
-check('injected at front', manifestReq.params.profiles[0], 'webvtt-lssdh-ios8');
-check('existing profiles kept',
-  manifestReq.params.profiles.includes('playready-h264mpl30-dash'), true);
-check('showAllSubDubTracks forced on', manifestReq.params.showAllSubDubTracks, true);
-check('stringify still returns valid json',
-  JSON.parse(encoded).params.showAllSubDubTracks, true);
+const sent = JSON.parse(encoded);
+
+/* 검증 대상은 "보낸 문자열" 이지 원본 객체가 아니다.
+   앞서는 원본의 profiles 에 값을 밀어 넣었는데, 그러면 페이지가 들고 있는
+   객체가 영구히 바뀌어 이후 요청에도 계속 따라붙는다. */
+check('webvtt profile injected', sent.params.profiles.includes('webvtt-lssdh-ios8'), true);
+check('injected at front', sent.params.profiles[0], 'webvtt-lssdh-ios8');
+check('existing profiles kept', sent.params.profiles.includes('playready-h264mpl30-dash'), true);
+check('showAllSubDubTracks forced on', sent.params.showAllSubDubTracks, true);
+
+check('원본 객체는 그대로', manifestReq.params.profiles, ['playready-h264mpl30-dash', 'dfxp-ls-sdh']);
+check('원본 플래그도 그대로', manifestReq.params.showAllSubDubTracks, false);
 
 // 두 번 직렬화해도 프로필이 중복되지 않아야 한다
-sandboxJSON.stringify(manifestReq);
+const again = JSON.parse(sandboxJSON.stringify(manifestReq));
 check('no duplicate profile on re-stringify',
-  manifestReq.params.profiles.filter((p) => p === 'webvtt-lssdh-ios8').length, 1);
+  again.params.profiles.filter((p) => p === 'webvtt-lssdh-ios8').length, 1);
 
 // 매니페스트가 아닌 요청은 건드리지 않는다
 const otherReq = { url: '/api/shakti/metadata', params: { profiles: ['x'] } };
-sandboxJSON.stringify(otherReq);
-check('unrelated request untouched', otherReq.params.profiles, ['x']);
+check('unrelated request untouched',
+  JSON.parse(sandboxJSON.stringify(otherReq)).params.profiles, ['x']);
+
+/* 디즈니+ 오류 83 재발 방지.
+
+   webvtt-lssdh-ios8 은 넷플릭스 전용 프로필이다. URL 에 "manifest" 가 들어간다는
+   이유만으로 디즈니+ 요청에 끼워 넣으면 서버가 거부하고 재생이 실패한다.
+   호스트가 넷플릭스가 아니면 손대지 않아야 한다. */
+console.log('\n[다른 서비스의 요청은 손대지 않는다]');
+{
+  const dw = {
+    location: { href: 'https://www.disneyplus.com/play/1',
+                hostname: 'www.disneyplus.com', pathname: '/play/1' },
+    addEventListener: () => {}, fetch: async () => ({}),
+    Worker: function () {}, XMLHttpRequest: FakeXHR
+  };
+  dw.window = dw;
+  const dJSON = { parse: JSON.parse, stringify: JSON.stringify };
+  vm.runInContext(
+    fs.readFileSync(nodePath.join(ROOT, 'src', 'hook.js'), 'utf8'),
+    vm.createContext({
+      window: dw, XMLHttpRequest: FakeXHR, location: dw.location,
+      history: { pushState() {}, replaceState() {} },
+      URL, JSON: dJSON, console, String, Object, Array, Set, Promise, Error,
+      DOMParser: require('@xmldom/xmldom').DOMParser,
+      ArrayBuffer, Map,
+      setTimeout: () => 0, setInterval: () => 0,
+      clearTimeout: () => {}, clearInterval: () => {},
+      MutationObserver: function () { this.observe = () => {}; },
+      document: { addEventListener: () => {} }
+    })
+  );
+
+  const dReq = {
+    url: 'https://disney.api/media/manifest/1',
+    params: { profiles: ['playready-h264mpl30-dash'], showAllSubDubTracks: false }
+  };
+  const dSent = JSON.parse(dJSON.stringify(dReq));
+  check('넷플릭스 프로필을 끼워 넣지 않는다',
+    dSent.params.profiles, ['playready-h264mpl30-dash']);
+  check('플래그도 건드리지 않는다', dSent.params.showAllSubDubTracks, false);
+}
 
 let strThrew = false;
 try {
